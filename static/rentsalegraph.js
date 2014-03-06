@@ -48,21 +48,30 @@ var data = [
   }
   data.sort(compare);
   
-  //Globals
+  /* --- Globals --- */
+  //There are two modes: R for rental, and S for sale
   var mode = "R";
-  var dateBegin = Date.parse(data[0].date);
-  
-  //Creating an array of sales and rents, and resetting the dates of each element
+  //The date of the earliest transaction
+  var dataBegin = Date.parse(data[0].date);
+  //Under the assumption that a sale is the first event, this is the first rent
+  //transaction
+  var firstRent = -1;
+  data.forEach(function(d) {
+    if(d.sale_rental == "R" && (firstRent == -1 || Date.parse(d.date) < firstRent)) {
+      firstRent = Date.parse(d.date);
+    }
+  });
+
+    //Creating an array of sales and rents, and resetting the dates of each element
     //to range from 0 to the most recent date - earliest date
     var saleArray = [];
     var rentArray = [];
     data.forEach(function(d) {
-      d.date = (Date.parse(d.date) - dateBegin);      
+      d.date = Date.parse(d.date);
       if(d.sale_rental == "R") {
         rentArray.push(d);
       } else saleArray.push(d);
     });
-  
   //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
   drawGraph(mode);
   //Adapt to changing screen size
@@ -74,7 +83,7 @@ var data = [
     d3.select("svg").remove();
     //Drawing Axes
     var margin = {top: 20, right: 20, bottom: 30, left: 80},
-        width = window.innerWidth*0.8 - margin.left - margin.right,
+        width = window.innerWidth*0.6 - margin.left - margin.right,
         height = window.innerHeight*0.8 - margin.top - margin.bottom,
         x = d3.time.scale().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
@@ -99,7 +108,7 @@ var data = [
       //the earliest to the latest dates on the x-axis, there should be
       //some space between the lowest rental price and the bottom of the axis  
       x.domain(d3.extent(rentArray, function(d) { return d.date; }));
-      y.domain([minRent/2 , maxRent]);
+      y.domain([.6*minRent , maxRent]);
     } else {
       var maxSale = d3.max(saleArray, function(d) { return d.price; });
       var minSale = d3.min(saleArray, function(d) { return d.price; });
@@ -107,7 +116,7 @@ var data = [
       //because ownership spans over the entire apartment history. The y-axis is 
       //scaled the same way as it was above
       x.domain(d3.extent(data, function(d) { return d.date; }));
-      y.domain([minSale/2, maxSale]);
+      y.domain([.6*minSale, maxSale]);
     }
     
     //Actually drawing the axes and graph here
@@ -126,7 +135,11 @@ var data = [
         .attr("dy", ".71em")
         .style("text-anchor", "middle")
         .text("Price ($)");
+
+    //draw background divisions
     
+
+    //draw lines
     if(mode == "R") {
       svg.append("path")
         .datum(rentArray)
@@ -137,6 +150,29 @@ var data = [
         .datum(saleArray)
         .attr("class", "line")
         .attr("d", line);
+    }
+    
+    //label points
+    if(mode == "R") {
+      svg.selectAll(".dot")
+        .data(rentArray).enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("r", 3.5)
+        .attr("cx", function(d) { return x(d.date); })
+        .attr("cy", function(d) { return y(d.price); })
+        .on("mouseover", function() {
+            d3.select(this)
+              .style("fill", "red")
+              .attr("r", 5)
+              .append("svg:title")
+              .text(function(d) { return "$" + d.price; });
+            })
+        .on("mouseout", function() {
+            d3.select(this)
+              .style("fill", "black")
+              .attr("r", 3.5);
+          });
     }
   }
 //});

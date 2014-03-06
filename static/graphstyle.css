@@ -10,3 +10,13 @@
   stroke: steelblue;
   stroke-width: 1.5px;
 }
+
+.dot {
+  fill: "black";
+}
+
+.highlight.dot {
+  color: "red";
+  fill: "red";  
+  border-radius: 4px;
+}
