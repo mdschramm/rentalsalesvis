@@ -51,48 +51,47 @@ var data = [
   //Globals
   var mode = "R";
   var dateBegin = Date.parse(data[0].date);
+  
+  //Creating an array of sales and rents, and resetting the dates of each element
+    //to range from 0 to the most recent date - earliest date
+    var saleArray = [];
+    var rentArray = [];
+    data.forEach(function(d) {
+      d.date = (Date.parse(d.date) - dateBegin);      
+      if(d.sale_rental == "R") {
+        rentArray.push(d);
+      } else saleArray.push(d);
+    });
+  
+  //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
   drawGraph(mode);
-
   //Adapt to changing screen size
   window.onresize = function() {
     drawGraph(mode); 
   }
 
   function drawGraph(mode) {
+    d3.select("svg").remove();
     //Drawing Axes
-    var margin = {top: 20, right: 20, bottom: 30, left: 50},
-        width = window.innerWidth*0.5 - margin.left - margin.right,
-        height = window.innerHeigh*0.5 - margin.top - margin.bottom,
+    var margin = {top: 20, right: 20, bottom: 30, left: 80},
+        width = window.innerWidth*0.8 - margin.left - margin.right,
+        height = window.innerHeight*0.8 - margin.top - margin.bottom,
         x = d3.time.scale().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
         xAxis = d3.svg.axis().scale(x).orient("bottom"),
         yAxis = d3.svg.axis().scale(y).orient("left");
     //The x variable for a line is the date, and the y variable is the rental price
     var line = d3.svg.line()
-        .x(function(d) { return (d.date); })
-        .y(function(d) { return (d.price); })
-    }
+        .x(function(d) { return x(d.date); })
+        .y(function(d) { return y(d.price); });
     //var bargraph --- this will be for the sales mode
     
     //Adding the svg DOM object
-    var svg = d3.select("#chart").append("svg")
+    var svg = d3.select("#graph").append("svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-    
-    //Creating an array of sales and rents, and resetting the dates of each element
-    //to range from 0 to the most recent date - earliest date
-    var saleArray = [];
-    var rentArray = [];
-    data.forEach(function(d) {
-      d.date = Date.parse(d.date) - dateBegin;      
-      if(d.sale_rental == "R") {
-        rentArray.push(d);
-      } else saleArray.push(d);
-    });
-
-    //The
     if(mode == "R") {  
       var maxRent = d3.max(rentArray, function(d) { return d.price; });
       var minRent = d3.min(rentArray, function(d) { return d.price; });
@@ -109,6 +108,35 @@ var data = [
       //scaled the same way as it was above
       x.domain(d3.extent(data, function(d) { return d.date; }));
       y.domain([minSale/2, maxSale]);
-
     }
+    
+    //Actually drawing the axes and graph here
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis);
+
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+      .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", -60)
+        .attr("x", -height/2)
+        .attr("dy", ".71em")
+        .style("text-anchor", "middle")
+        .text("Price ($)");
+    
+    if(mode == "R") {
+      svg.append("path")
+        .datum(rentArray)
+        .attr("class", "line")
+        .attr("d", line);
+    } else {
+      svg.append("path")
+        .datum(saleArray)
+        .attr("class", "line")
+        .attr("d", line);
+    }
+  }
 //});
