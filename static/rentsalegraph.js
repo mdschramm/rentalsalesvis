@@ -50,7 +50,7 @@ var data = [
   
   /* --- Globals --- */
   //There are two modes: R for rental, and S for sale
-  var mode = "R";
+  var mode = "S";
   //The date of the earliest transaction
   var dataBegin = Date.parse(data[0].date);
   //Under the assumption that a sale is the first event, this is the first rent
@@ -66,12 +66,35 @@ var data = [
     //to range from 0 to the most recent date - earliest date
     var saleArray = [];
     var rentArray = [];
+    
+    //Representing what the last rent and sale dates were, for the purpose of setting the
+    //span field of each transaction element
+    var lastRent = 0;
+    var lastSale = 0;
+
+    
     data.forEach(function(d) {
+      //To maintain the date's old form
+      d.prettyDate = d.date;
       d.date = Date.parse(d.date);
       if(d.sale_rental == "R") {
         rentArray.push(d);
-      } else saleArray.push(d);
+      } else {
+        saleArray.push(d);
+      }
     });
+
+    setSpans(rentArray);
+    setSpans(saleArray);
+
+    function setSpans(dataArray) {
+      for(var i = 0; i < dataArray.length - 1; i++) {
+        dataArray[i].span = dataArray[i+1].date - dataArray[i].date;
+      }
+      dataArray[dataArray.length - 1].span = data[data.length - 1].date - dataArray[dataArray.length - 1].date;
+    }
+    console.log(rentArray);
+    console.log(saleArray);
   //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
   drawGraph(mode);
   //Adapt to changing screen size
@@ -135,27 +158,53 @@ var data = [
         .attr("dy", ".71em")
         .style("text-anchor", "middle")
         .text("Price ($)");
-
-    //draw background divisions
-    
-
-    //draw lines
+      
     if(mode == "R") {
-      svg.append("path")
-        .datum(rentArray)
-        .attr("class", "line")
-        .attr("d", line);
+      drawBackgroundDivisions(saleArray);
+      drawPointsAndLine(rentArray);
     } else {
-      svg.append("path")
-        .datum(saleArray)
-        .attr("class", "line")
-        .attr("d", line);
+      drawBackgroundDivisions(rentArray);
+      drawPointsAndLine(saleArray);
     }
     
-    //label points
-    if(mode == "R") {
+    //This will draw the background divisions to provide a backdrop of changing ownership
+    //over the graph of rent values, or the backdrop of changing tenants over the graph of
+    //sales values.
+
+    function drawBackgroundDivisions(dataArray) {
+      svg.selectAll("rect")
+        .data(dataArray).enter()
+        .append("rect")
+        .attr("class", "bar")
+        //.attr("id"
+        .attr("x", function(d) { 
+          if(x(d.date) < 0) return 0;
+          return x(d.date); 
+        })
+        .attr("y", function(d) { 
+          if(y(d.price) < height) return 0;
+            return height - y(d.price); 
+        })
+        .attr("height", function(d) { 
+           if(y(d.price) < height)  return height;
+           return y(d.price); 
+        }) 
+        .style("fill", "green")
+        .attr("width", function(d) { 
+          if(x(d.span) < 0) return width; 
+          return x(d.span);  
+        }) 
+        .style("opacity", "0.4");
+    }
+
+    function drawPointsAndLine(dataArray) {
+      svg.append("path")
+        .datum(dataArray)
+        .attr("class", "line")
+        .attr("d", line);
+      
       svg.selectAll(".dot")
-        .data(rentArray).enter()
+        .data(dataArray).enter()
         .append("circle")
         .attr("class", "dot")
         .attr("r", 3.5)
