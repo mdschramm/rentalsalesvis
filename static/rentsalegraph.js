@@ -89,10 +89,10 @@ var data = [
       }
     });
 
-    setSpans(rentArray);
-    setSpans(saleArray);
+    setEndDates(rentArray);
+    setEndDates(saleArray);
 
-    function setSpans(dataArray) {
+    function setEndDates(dataArray) {
       for(var i = 0; i < dataArray.length - 1; i++) {
         dataArray[i].endDate = dataArray[i+1].date;
         //kind of hacky, I added an index field so later when I'm making background divisions,
@@ -103,8 +103,6 @@ var data = [
       //same here
       dataArray[dataArray.length - 1].index = i;
     }
-    console.log(rentArray);
-    console.log(saleArray);
   //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
   drawGraph(mode);
   //Adapt to changing screen size
@@ -114,6 +112,8 @@ var data = [
 
   function drawGraph(mode) {
     d3.select("svg").remove();
+    var title = (mode == "R") ? "Rentals" : "Sales";
+    $("#toggle").text(title);
     //Drawing Axes
     var margin = {top: 50, right: 20, bottom: 30, left: 80},
         width = window.innerWidth*0.6 - margin.left - margin.right,
@@ -216,7 +216,11 @@ var data = [
         }) 
         .style("opacity", "0.4")
         .on("mouseover", tooltip.show)
-        .on("mouseout", tooltip.hide);
+        .on("mouseout", tooltip.hide)
+        .on("click", function(d) {
+          mode = (d.sale_rental == "R") ? "R" : "S";
+          drawGraph(mode);
+        });
     }
 
     function drawPointsAndLine(dataArray) {
