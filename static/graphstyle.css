@@ -15,10 +15,8 @@
   fill: "black";
 }
 
-.dot:hover {
-  background-color: "red";
-  fill: "red";  
-  border-radius: 4px;
+.bar:hover {
+  opacity:0.2;
 }
 
 /* These css tooltip traits are borrowed from http://bl.ocks.org/Caged/6476579" */

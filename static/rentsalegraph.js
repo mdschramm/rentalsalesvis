@@ -1,4 +1,4 @@
-//$.getJSON("static/json.txt",function(result) {
+//$.getJSON("static/json.txt",function(data) {
 var data = [
     {
         "date" : "February 15, 2014",
@@ -49,7 +49,7 @@ var data = [
         "date": "January 10, 2014",
         "price": 175000.00,
         "sale_rental": "S"
-    }
+    },
 ] 
 
   //Sorting data by date

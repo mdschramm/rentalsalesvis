@@ -38,5 +38,16 @@
         "date" : "March 15, 2010",
         "price": 265000.00,
         "sale_rental": "S"
-    }
+    },
+    {
+        "date" : "December 02, 2013",
+        "price" : 300000.00,
+        "sale_rental": "S"
+    },
+    {
+        "date": "January 10, 2014",
+        "price": 175000.00,
+        "sale_rental": "S"
+    },
 ]
+
