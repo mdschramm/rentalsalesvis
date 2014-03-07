@@ -44,6 +44,11 @@ var data = [
         "date" : "December 02, 2013",
         "price" : 300000.00,
         "sale_rental": "S"
+    },
+    {
+        "date": "January 10, 2014",
+        "price": 175000.00,
+        "sale_rental": "S"
     }
 ] 
 
@@ -55,7 +60,7 @@ var data = [
   
   /* --- Globals --- */
   //There are two modes: R for rental, and S for sale
-  var mode = "R";
+  var rent_or_sale = "R";
   //The date of the earliest transaction
   var dataBegin = Date.parse(data[0].date);
   //Under the assumption that a sale is the first event, this is the first rent
@@ -104,29 +109,32 @@ var data = [
       dataArray[dataArray.length - 1].index = i;
     }
   //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
-  drawGraph(mode);
+  drawGraph(rent_or_sale);
   //Adapt to changing screen size
   window.onresize = function() {
-    drawGraph(mode); 
+    drawGraph(rent_or_sale); 
   }
 
   function drawGraph(mode) {
     d3.select("svg").remove();
+    //Title of graph
     var title = (mode == "R") ? "Rentals" : "Sales";
-    $("#toggle").text(title);
     //Drawing Axes
-    var margin = {top: 50, right: 20, bottom: 30, left: 80},
-        width = window.innerWidth*0.6 - margin.left - margin.right,
+    var margin = {top: 50, 
+                  right: 50, 
+                  bottom: 30, 
+                  left: 150},
+        width = window.innerWidth*0.75 - margin.left - margin.right,
         height = window.innerHeight*.85 - margin.top - margin.bottom,
         x = d3.time.scale().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
-        xAxis = d3.svg.axis().scale(x).orient("bottom"),
-        yAxis = d3.svg.axis().scale(y).orient("left");
+        formatPrice = d3.format(".2s")
+        xAxis = d3.svg.axis().scale(x).orient("bottom").ticks(6),
+        yAxis = d3.svg.axis().scale(y).orient("left").tickFormat(formatPrice);
     //The x variable for a line is the date, and the y variable is the rental price
     var line = d3.svg.line()
         .x(function(d) { return x(d.date); })
         .y(function(d) { return y(d.price); });
-    //var bargraph --- this will be for the sales mode
     
     //Adding the svg DOM object
     var svg = d3.select("#graph").append("svg")
@@ -169,15 +177,22 @@ var data = [
         .style("text-anchor", "middle")
         .text("Price ($)");
 
+    svg.append("text")
+      .attr("x", width/2)
+      .attr("y", 0 - (margin.top / 2))
+      .attr("text-anchor", "middle")
+      .style("font-size", "30px")
+      .text(title);
     //Creating the tooltip for the backgrounds
-
+    
+    var priceFormat = d3.format(",");
     var tooltip = d3.tip()
       .attr("class", "tooltip")
       .offset([-10, 0])
       .html(function(d) {
         if(d.sale_rental == "R") {
-          return "<span style=color:white>Rented for $" + d.price + " on " + d.prettyDate + "</span>";
-        } else return "<span style=color:white>Sold for $" + d.price + " on " + d.prettyDate + "</span>";
+          return "<span style=color:white>Rented for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
+        } else return "<span style=color:white>Sold for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
       });
         
       svg.call(tooltip);
@@ -218,8 +233,8 @@ var data = [
         .on("mouseover", tooltip.show)
         .on("mouseout", tooltip.hide)
         .on("click", function(d) {
-          mode = (d.sale_rental == "R") ? "R" : "S";
-          drawGraph(mode);
+          rent_or_sale = (d.sale_rental == "R") ? "R" : "S";
+          drawGraph(rent_or_sale);
         });
     }
 
