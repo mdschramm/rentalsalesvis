@@ -1,4 +1,33 @@
+//This wasn't working because of cross origin resource sharing restictions imposed by chrome
+//
 //$.getJSON("static/json.txt",function(data) {
+
+
+//I added two additional sales to the data, just to better illustrate the features of my
+//data representation, which are as follows:
+//
+//  This graph has 2 'modes': The default mode is a line plot with rental prices against
+//  a backdrop of different ownerships. If you click on the background divisions, you will
+//  be taken to the 2nd mode, which is just the reverse of the default mode. In other words,
+//  there will be a line plot of the sales against a background of rent history. The slight
+//  difference is that the 2nd mode is a scatter plot rather than a line chart becase sales are
+//  much more sparse, meaning that the value of having lines, which is seeing trends, isn't really
+//  applicable in this scenario. I chose this line chart-background division design because the pricing 
+//  of rents and sales are vastly differnt, so it wouldn't really make sense to graph the data on the 
+//  same set of axes. 
+//
+//  I was initally considering having 2 y-axes, that were scaled differently, and just having two 
+//  separate line plots.
+//  
+//  I discarded this idea because of the scaling problems it would present on the x-axis.
+//  The amount of time between sales in this data set dwarfs the time between the rentals,
+//  and I didn't want to impose the larger time scaling on the rent data. Given more
+//  time, I might've given it a shot with an added zoom feature so the data was more viewable.
+//
+//  Other details such as color and number representations I just chose because of aethstetic
+//  appeal.
+//
+//
 var data = [
     {
         "date" : "February 15, 2014",
@@ -61,28 +90,13 @@ var data = [
   /* --- Globals --- */
   //There are two modes: R for rental, and S for sale
   var rent_or_sale = "R";
-  //The date of the earliest transaction
-  var dataBegin = Date.parse(data[0].date);
-  //Under the assumption that a sale is the first event, this is the first rent
-  //transaction
-  var firstRent = -1;
-  data.forEach(function(d) {
-    if(d.sale_rental == "R" && (firstRent == -1 || Date.parse(d.date) < firstRent)) {
-      firstRent = Date.parse(d.date);
-    }
-  });
-
+  
     //Creating an array of sales and rents, and resetting the dates of each element
     //to range from 0 to the most recent date - earliest date
     var saleArray = [];
     var rentArray = [];
     
-    //Representing what the last rent and sale dates were, for the purpose of setting the
-    //span field of each transaction element
-    var lastRent = 0;
-    var lastSale = 0;
-
-    
+   //Separating the data into sales and rents.     
     data.forEach(function(d) {
       //To maintain the date's old form
       d.prettyDate = d.date;
@@ -93,9 +107,12 @@ var data = [
         saleArray.push(d);
       }
     });
-
+    
     setEndDates(rentArray);
     setEndDates(saleArray);
+    
+    //This adds an enddates field to each entry, which are used when creating background
+    //divisions
 
     function setEndDates(dataArray) {
       for(var i = 0; i < dataArray.length - 1; i++) {
@@ -108,18 +125,20 @@ var data = [
       //same here
       dataArray[dataArray.length - 1].index = i;
     }
-  //Graph is initially drawn, and will be redrawn given changes in screen size, or mode
+
+  //Graph is initially drawn, and will be redrawn given changes in screen size
   drawGraph(rent_or_sale);
-  //Adapt to changing screen size
   window.onresize = function() {
     drawGraph(rent_or_sale); 
   }
-
+  
+  //This function is purely responsible for plotting the data from the preprocessed
+  //global variable data
   function drawGraph(mode) {
     d3.select("svg").remove();
     //Title of graph
     var title = (mode == "R") ? "Rentals" : "Sales";
-    //Drawing Axes
+    //Drawing Axes, margins, etc. Some magic numbers here, but time was of the essence
     var margin = {top: 50, 
                   right: 50, 
                   bottom: 30, 
@@ -175,13 +194,15 @@ var data = [
         .attr("x", -height/2)
         .attr("dy", ".71em")
         .style("text-anchor", "middle")
-        .text("Price ($)");
+        .style("font-family", "Impact")
+        .text(title + " Price ($)");
 
     svg.append("text")
       .attr("x", width/2)
       .attr("y", 0 - (margin.top / 2))
       .attr("text-anchor", "middle")
       .style("font-size", "30px")
+      .style("font-family", "trebuchet ms")
       .text(title);
     //Creating the tooltip for the backgrounds
     
@@ -191,8 +212,8 @@ var data = [
       .offset([-10, 0])
       .html(function(d) {
         if(d.sale_rental == "R") {
-          return "<span style=color:white>Rented for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
-        } else return "<span style=color:white>Sold for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
+          return "<span style=color:white;font-family:tahoma;>Rented for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
+        } else return "<span style=color:white;font-family:tahoma;>Sold for $" + priceFormat(d.price) + " on " + d.prettyDate + "</span>";
       });
         
       svg.call(tooltip);
@@ -214,7 +235,6 @@ var data = [
         .data(dataArray).enter()
         .append("rect")
         .attr("class", "bar")
-        //.attr("id"
         .attr("x", function(d) { 
           if(x(d.date) < 0) return 0;
           return x(d.date); 
@@ -233,6 +253,7 @@ var data = [
         .on("mouseover", tooltip.show)
         .on("mouseout", tooltip.hide)
         .on("click", function(d) {
+          //If the background divisions are clicked, the mode is changed
           rent_or_sale = (d.sale_rental == "R") ? "R" : "S";
           drawGraph(rent_or_sale);
         });
@@ -242,6 +263,7 @@ var data = [
       svg.append("path")
         .datum(dataArray)
         .attr("class", "line")
+        .attr("class", title)
         .attr("d", line);
       
       svg.selectAll(".dot")

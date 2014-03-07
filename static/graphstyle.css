@@ -5,7 +5,12 @@
   shape-rendering: crispEdges;
 }
 
-.line {
+.Sales {
+  stroke-width: 0px;
+  fill:none;
+}
+
+.Rentals {
   fill: none;
   stroke: steelblue;
   stroke-width: 1.5px;
