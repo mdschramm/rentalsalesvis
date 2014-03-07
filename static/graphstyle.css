@@ -15,8 +15,38 @@
   fill: "black";
 }
 
-.highlight.dot {
-  color: "red";
+.dot:hover {
+  background-color: "red";
   fill: "red";  
   border-radius: 4px;
 }
+
+/* These css tooltip traits are borrowed from http://bl.ocks.org/Caged/6476579" */
+
+.tooltip {
+  line-height: 1,
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 2px;
+}
+
+.tooltip:after {
+  box-sizing: border-box;
+  display: inline;
+  font-size: 10px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+}
+
+.tooltip:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+}
+

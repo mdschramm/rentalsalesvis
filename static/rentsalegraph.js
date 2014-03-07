@@ -39,6 +39,11 @@ var data = [
         "date" : "March 15, 2010",
         "price": 265000.00,
         "sale_rental": "S"
+    },
+    {
+        "date" : "December 02, 2013",
+        "price" : 300000.00,
+        "sale_rental": "S"
     }
 ] 
 
@@ -50,7 +55,7 @@ var data = [
   
   /* --- Globals --- */
   //There are two modes: R for rental, and S for sale
-  var mode = "S";
+  var mode = "R";
   //The date of the earliest transaction
   var dataBegin = Date.parse(data[0].date);
   //Under the assumption that a sale is the first event, this is the first rent
@@ -89,9 +94,14 @@ var data = [
 
     function setSpans(dataArray) {
       for(var i = 0; i < dataArray.length - 1; i++) {
-        dataArray[i].span = dataArray[i+1].date - dataArray[i].date;
+        dataArray[i].endDate = dataArray[i+1].date;
+        //kind of hacky, I added an index field so later when I'm making background divisions,
+        //I can get the index of each element as it's selected, and set the color.
+        dataArray[i].index = i;
       }
-      dataArray[dataArray.length - 1].span = data[data.length - 1].date - dataArray[dataArray.length - 1].date;
+      dataArray[dataArray.length - 1].endDate = data[data.length - 1].date;
+      //same here
+      dataArray[dataArray.length - 1].index = i;
     }
     console.log(rentArray);
     console.log(saleArray);
@@ -105,9 +115,9 @@ var data = [
   function drawGraph(mode) {
     d3.select("svg").remove();
     //Drawing Axes
-    var margin = {top: 20, right: 20, bottom: 30, left: 80},
+    var margin = {top: 50, right: 20, bottom: 30, left: 80},
         width = window.innerWidth*0.6 - margin.left - margin.right,
-        height = window.innerHeight*0.8 - margin.top - margin.bottom,
+        height = window.innerHeight*.85 - margin.top - margin.bottom,
         x = d3.time.scale().range([0, width]),
         y = d3.scale.linear().range([height, 0]),
         xAxis = d3.svg.axis().scale(x).orient("bottom"),
@@ -158,7 +168,20 @@ var data = [
         .attr("dy", ".71em")
         .style("text-anchor", "middle")
         .text("Price ($)");
-      
+
+    //Creating the tooltip for the backgrounds
+
+    var tooltip = d3.tip()
+      .attr("class", "tooltip")
+      .offset([-10, 0])
+      .html(function(d) {
+        if(d.sale_rental == "R") {
+          return "<span style=color:white>Rented for $" + d.price + " on " + d.prettyDate + "</span>";
+        } else return "<span style=color:white>Sold for $" + d.price + " on " + d.prettyDate + "</span>";
+      });
+        
+      svg.call(tooltip);
+
     if(mode == "R") {
       drawBackgroundDivisions(saleArray);
       drawPointsAndLine(rentArray);
@@ -181,20 +204,19 @@ var data = [
           if(x(d.date) < 0) return 0;
           return x(d.date); 
         })
-        .attr("y", function(d) { 
-          if(y(d.price) < height) return 0;
-            return height - y(d.price); 
+        .attr("y", 0)
+        .attr("height", height) 
+        .style("fill", function(d) {
+          if(d.index % 2 == 0) return "green";
+          if(d.index % 2 == 1) return "orange";
         })
-        .attr("height", function(d) { 
-           if(y(d.price) < height)  return height;
-           return y(d.price); 
-        }) 
-        .style("fill", "green")
         .attr("width", function(d) { 
-          if(x(d.span) < 0) return width; 
-          return x(d.span);  
+          if(x(d.date) < 0) return x(d.endDate); 
+          return x(d.endDate) - x(d.date);  
         }) 
-        .style("opacity", "0.4");
+        .style("opacity", "0.4")
+        .on("mouseover", tooltip.show)
+        .on("mouseout", tooltip.hide);
     }
 
     function drawPointsAndLine(dataArray) {
@@ -210,18 +232,8 @@ var data = [
         .attr("r", 3.5)
         .attr("cx", function(d) { return x(d.date); })
         .attr("cy", function(d) { return y(d.price); })
-        .on("mouseover", function() {
-            d3.select(this)
-              .style("fill", "red")
-              .attr("r", 5)
-              .append("svg:title")
-              .text(function(d) { return "$" + d.price; });
-            })
-        .on("mouseout", function() {
-            d3.select(this)
-              .style("fill", "black")
-              .attr("r", 3.5);
-          });
+        .on("mouseover", tooltip.show)
+        .on("mouseout", tooltip.hide);
     }
   }
 //});
